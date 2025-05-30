@@ -1,10 +1,8 @@
 #!/bin/bash
 
-
 # === Configuration ===
 YTDLP="$HOME/install_me/yt-dlp"           # Path to manually downloaded yt-dlp
 SAVE_DIR="$HOME/Downloads/mp3s"           # Define output directory
-GENIUS_TOKEN="_s5x_ipHY92DX3qf1fEqrOvftNjZp_Bz9DBSOUSAZXmad700O_9momuwFlXPuZcC"
 URL="$1"
 
 # === Color Definitions ===
@@ -45,17 +43,6 @@ is_valid_youtube_url() {
     fi
 }
 
-# === Extract YouTube Video ID ===
-extract_youtube_id() {
-    local url="$1"
-    # Match various YouTube formats and extract ID using parameter expansion
-    if [[ "$url" =~ (youtu\.be/|v=|\/v\/|embed/)([a-zA-Z0-9_-]{11}) ]]; then
-        echo "${BASH_REMATCH[2]}"
-    else
-        echo ""
-    fi
-}
-
 # === Main Logic ===
 [[ -z "$URL" ]] && error_exit "🙅‍♂️ No URL provided!"
 
@@ -66,42 +53,24 @@ fi
 # 1. Get title from YouTube
 TITLE=$("$YTDLP" --get-title "$URL")
 CLEANED_TITLE=$(echo "$TITLE" | sed -E 's/\(.*\)|\[.*\]//g' | xargs)
+CLEANED_TITLE=$(echo "$CLEANED_TITLE" | sed 's#[/:*?"<>|]##g')
+CLEANED_TITLE=$(echo "$TITLE" \
+        | sed -E 's/\(.*\)|\[.*\]//g' \
+        | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+    | sed -E 's/^(.*) - (.*)$/\2 - \1/')
+
+CLEANED_TITLE=$(echo "$TITLE" \
+        | sed -E 's/\(.*\)|\[.*\]//g' \                  # Remove (Official Video), [Lyrics], etc.
+    | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' \     # Trim leading/trailing spaces
+    | sed -E 's/^(.*) - (.*)$/\2 - \1/' \             # Swap "Artist - Song" → "Song - Artist"
+    | sed 's#[/:*?"<>|]##g'                          # Remove illegal filename characters
+)
+
+
 echo -e "\n${GREEN}${CLEANED_TITLE}${RESET}\n"
-
-search_genius() {
-    local query="$1"
-    local response=$(curl -s -G "https://api.genius.com/search" \
-            --data-urlencode "q=$query" \
-        -H "Authorization: Bearer $GENIUS_TOKEN")
-
-    echo "$response" | jq  # Pretty-print full JSON
-}
-
-echo -e "${CYAN}🔍 Searching Genius for metadata...${RESET}"
-GENIUS_RESPONSE=$(curl -s -G "https://api.genius.com/search" \
-        --data-urlencode "q=$CLEANED_TITLE" \
-    -H "Authorization: Bearer $GENIUS_TOKEN")
-
-# Use jq to extract the first hit
-hit=$(echo "$GENIUS_RESPONSE" | jq '.response.hits[0].result')
-
-# Extract fields
-GENIUS_TITLE=$(echo "$hit" | jq -r '.title')
-GENIUS_ARTIST=$(echo "$hit" | jq -r '.artist_names')
-GENIUS_URL=$(echo "$hit" | jq -r '.url')
-GENIUS_DATE=$(echo "$hit" | jq -r '.release_date // empty')
-GENIUS_ALBUM=$(echo "$hit" | jq -r '.album.name // empty')
-GENIUS_THUMBNAIL=$(echo "$hit" | jq -r '.song_art_image_thumbnail_url // empty')
-GENIUS_COVER=$(echo "$hit" | jq -r '.song_art_image_url // empty')
 
 mkdir -p "$SAVE_DIR"                      # Ensure directory exists
 cd "$SAVE_DIR" || exit 1                  # Switch to download folder
-
-VIDEO_ID=$(extract_youtube_id "$URL")
-echo -e "${CYAN}🎬 YouTube ID: $VIDEO_ID${RESET}"
-
-# === Download using yt-dlp ===
-echo -e "${YELLOW}⬇️ Downloading MP3...${RESET}"
 
 [[ ! -x "$YTDLP" ]] && error_exit "🚫 yt-dlp not found or not executable at $YTDLP"
 
@@ -121,15 +90,17 @@ else
     exit 1
 fi
 
+# === Download using yt-dlp ===
+echo -e "${YELLOW}⬇️ Downloading MP3...${RESET}"
+
 "$YTDLP" -x \
     --audio-format mp3 \
     --embed-thumbnail \
     --audio-quality 0 \
-    -o "$SAVE_DIR/%(title)s.%(ext)s" \
+    --output "$SAVE_DIR/${CLEANED_TITLE}.%(ext)s" \
     "$URL" &
 
 show_spinner
 
 # === Success Message ===
-echo -e "\n\n${GREEN}✅ Download completed successfully! Saved in: $SAVE_DIR 🎶${RESET}"
-
+echo -e "\n\n${GREEN}✅ Downloading ${YELLOW}$CLEANED_TITLE ${GREEN}completed successfully! Saved in: $SAVE_DIR 🎶${RESET}"

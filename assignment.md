@@ -1,10 +1,3 @@
-# Genius API
- - [-] get `metadata` from *genius*
-
-# Need scraping from genius api
- - [ ] save mp3 with *meaningful* name in `output dir`
- - [ ] return success message with *actual full name* of the `song`
-
 # Formatting
  - [ ] move all *comments* in one `row`
 
