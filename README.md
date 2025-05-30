@@ -1,16 +1,17 @@
-# 🎵 ytmp3 – YouTube to MP3 Downloader *bashscript*
+# 🎵 ytmp3 – YouTube to MP3 Downloader *bashscript* for `Linux`
 
-A lightweight Bash script that uses `yt-dlp` & `genius api` to download YouTube videos as MP3s, complete with thumbnails.
+A lightweight Bash script that uses `yt-dlp` & `genius api` to download YouTube videos as MP3s, complete metadata with thumbnails.
 Designed for personal use and quick reuse after distro installs.
 
 ---
 ## 📦 Requirements
-- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp/releases/) (latest version recommended)
-- `ffmpeg` (for audio conversion)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases/) (latest version recommended)
+- [ffmpeg](https://github.com/FFmpeg/FFmpeg) (for audio conversion)
+- [jq](https://github.com/jqlang/jq) (for json conversion)
 
 ```bash
 sudo nala update -y;
-sudo nala install ffmpeg -y
+sudo nala install ffmpeg jq -y
 ```
 
 ## 🛠️ Installation (One-time Setup)

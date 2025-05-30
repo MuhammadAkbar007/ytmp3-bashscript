@@ -1,8 +1,10 @@
 #!/bin/bash
 
+
 # === Configuration ===
 YTDLP="$HOME/install_me/yt-dlp"           # Path to manually downloaded yt-dlp
 SAVE_DIR="$HOME/Downloads/mp3s"           # Define output directory
+GENIUS_TOKEN="_s5x_ipHY92DX3qf1fEqrOvftNjZp_Bz9DBSOUSAZXmad700O_9momuwFlXPuZcC"
 URL="$1"
 
 # === Color Definitions ===
@@ -66,6 +68,32 @@ TITLE=$("$YTDLP" --get-title "$URL")
 CLEANED_TITLE=$(echo "$TITLE" | sed -E 's/\(.*\)|\[.*\]//g' | xargs)
 echo -e "\n${GREEN}${CLEANED_TITLE}${RESET}\n"
 
+search_genius() {
+    local query="$1"
+    local response=$(curl -s -G "https://api.genius.com/search" \
+            --data-urlencode "q=$query" \
+        -H "Authorization: Bearer $GENIUS_TOKEN")
+
+    echo "$response" | jq  # Pretty-print full JSON
+}
+
+echo -e "${CYAN}🔍 Searching Genius for metadata...${RESET}"
+GENIUS_RESPONSE=$(curl -s -G "https://api.genius.com/search" \
+        --data-urlencode "q=$CLEANED_TITLE" \
+    -H "Authorization: Bearer $GENIUS_TOKEN")
+
+# Use jq to extract the first hit
+hit=$(echo "$GENIUS_RESPONSE" | jq '.response.hits[0].result')
+
+# Extract fields
+GENIUS_TITLE=$(echo "$hit" | jq -r '.title')
+GENIUS_ARTIST=$(echo "$hit" | jq -r '.artist_names')
+GENIUS_URL=$(echo "$hit" | jq -r '.url')
+GENIUS_DATE=$(echo "$hit" | jq -r '.release_date // empty')
+GENIUS_ALBUM=$(echo "$hit" | jq -r '.album.name // empty')
+GENIUS_THUMBNAIL=$(echo "$hit" | jq -r '.song_art_image_thumbnail_url // empty')
+GENIUS_COVER=$(echo "$hit" | jq -r '.song_art_image_url // empty')
+
 mkdir -p "$SAVE_DIR"                      # Ensure directory exists
 cd "$SAVE_DIR" || exit 1                  # Switch to download folder
 
@@ -104,3 +132,4 @@ show_spinner
 
 # === Success Message ===
 echo -e "\n\n${GREEN}✅ Download completed successfully! Saved in: $SAVE_DIR 🎶${RESET}"
+
