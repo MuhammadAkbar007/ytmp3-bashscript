@@ -3,6 +3,7 @@
 # === Configuration ===
 YTDLP="$HOME/install_me/yt-dlp"           # Path to manually downloaded yt-dlp
 SAVE_DIR="$HOME/Downloads/mp3s"           # Define output directory
+GENIUS_TOKEN="_s5x_ipHY92DX3qf1fEqrOvftNjZp_Bz9DBSOUSAZXmad700O_9momuwFlXPuZcC"
 URL="$1"
 
 # === Color Definitions ===
@@ -66,6 +67,45 @@ TITLE=$("$YTDLP" --get-title "$URL")
 CLEANED_TITLE=$(echo "$TITLE" | sed -E 's/\(.*\)|\[.*\]//g' | xargs)
 echo -e "\n${GREEN}${CLEANED_TITLE}${RESET}\n"
 
+search_genius() {
+    local query="$1"
+    local response=$(curl -s -G "https://api.genius.com/search" \
+            --data-urlencode "q=$query" \
+        -H "Authorization: Bearer $GENIUS_TOKEN")
+
+    echo "$response" | jq  # Pretty-print full JSON
+}
+
+echo -e "${CYAN}🔍 Searching Genius for metadata...${RESET}"
+
+GENIUS_RESPONSE=$(curl -s -G "https://api.genius.com/search" \
+        --data-urlencode "q=$CLEANED_TITLE" \
+    -H "Authorization: Bearer $GENIUS_TOKEN")
+
+# Use jq to extract the first hit
+hit=$(echo "$GENIUS_RESPONSE" | jq '.response.hits[0].result')
+
+# Extract fields
+GENIUS_SONG_ID=$(echo "$hit" | jq -r '.id')
+
+SONG_RESPONSE=$(curl -s "https://api.genius.com/songs/$GENIUS_SONG_ID" \
+    -H "Authorization: Bearer $GENIUS_TOKEN")
+
+GENIUS_TITLE=$(echo "$SONG_RESPONSE" | jq -r '.response.song.title')
+GENIUS_ARTIST=$(echo "$SONG_RESPONSE" | jq -r '.response.song.primary_artist.name')
+GENIUS_DATE=$(echo "$SONG_RESPONSE" | jq -r '.response.song.release_date // empty')
+GENIUS_ALBUM=$(echo "$SONG_RESPONSE" | jq -r '.response.song.album.name // empty')
+GENIUS_THUMBNAIL=$(echo "$SONG_RESPONSE" | jq -r '.response.song.song_art_image_thumbnail_url // empty')
+GENIUS_COVER=$(echo "$SONG_RESPONSE" | jq -r '.response.song.song_art_image_url // empty')
+GENIUS_URL=$(echo "$SONG_RESPONSE" | jq -r '.response.song.url // empty')
+
+echo -e "${CYAN}🎶 Title: $GENIUS_TITLE"
+echo -e "👤 Artist: $GENIUS_ARTIST"
+echo -e "📅 Release: $GENIUS_DATE"
+echo -e "💿 Album: $GENIUS_ALBUM"
+echo -e "🖼️ Cover: $GENIUS_COVER"
+echo -e "🔗 URL: $GENIUS_URL${RESET}"
+
 mkdir -p "$SAVE_DIR"                      # Ensure directory exists
 cd "$SAVE_DIR" || exit 1                  # Switch to download folder
 
@@ -104,3 +144,4 @@ show_spinner
 
 # === Success Message ===
 echo -e "\n\n${GREEN}✅ Download completed successfully! Saved in: $SAVE_DIR 🎶${RESET}"
+
