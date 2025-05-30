@@ -95,4 +95,7 @@ echo -e "${YELLOW}⬇️ Downloading MP3...${RESET}"
 show_spinner
 
 # === Success Message ===
-echo -e "\n\n${GREEN}✅ Downloading ${YELLOW}$CLEANED_TITLE ${GREEN}completed successfully! Saved in: $SAVE_DIR 🎶${RESET}"
+echo -e "\n\n✅ ${YELLOW}$CLEANED_TITLE ${GREEN}successfully downloaded! Saved in: $SAVE_DIR 🎶${RESET}"
+
+# === Change Directory to SAVE_DIR in a shell ===
+echo -e "\n${CYAN}💡 To navigate to download folder, run: ${YELLOW}cd '$SAVE_DIR'${RESET}"
