@@ -15,13 +15,13 @@ RESET="\e[0m"
 # === Spinner ===
 show_spinner() {
     local pid=$!
-    local spin='|/-\'
+    local spin='◐◓◑◒◐◓◑◒'
     local i=0
 
     while kill -0 $pid 2>/dev/null; do
         i=$(( (i+1) % 4 ))
-        printf "\r🌀 Downloading... ${spin:$i:1} "
-        sleep 0.1
+        printf "\r${CYAN}🌀 Downloading... ${GREEN}${spin:$i:1}${RESET} "
+        sleep 0.15
     done
 }
 
