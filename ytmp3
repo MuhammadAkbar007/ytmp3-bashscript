@@ -57,6 +57,7 @@ CLEANED_TITLE=$(echo "$TITLE" \
         | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' \
         | sed -E 's/^(.*) - (.*)$/\2 - \1/' \
         | sed 's#[/:*?"<>|]##g' \
+        | sed 's/^./\U&/' \
     )
 
 echo -e "\n${GREEN}${CLEANED_TITLE}${RESET}\n"
