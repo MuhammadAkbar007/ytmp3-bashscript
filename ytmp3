@@ -20,7 +20,8 @@ show_spinner() {
 
     while kill -0 $pid 2>/dev/null; do
         i=$(( (i+1) % 4 ))
-        printf "\r${CYAN}🌀 Downloading... ${GREEN}${spin:$i:1}${RESET} "
+        printf "\r${CYAN}💫 Downloading... ${GREEN}${spin:$i:1}${RESET} "
+        # ✨ or 🚀
         sleep 0.15
     done
 }
